@@ -7,12 +7,13 @@
   <meta name="description" content="A Severance-inspired MDR grid for coldharbor.work" />
   <style>
     :root {
-      --teal: #00e5db;
+      --teal: #27f7ff;
       --bg: #ffffff;
       --fg: #0b0b0b;
-      --gap: 10px;
-      --grid-cols: 20;
-      --cell-size: 32px;
+      --gap: 6px;
+      --grid-cols: 32;
+      --cell-size: 26px;
+      --glow: 0 0 6px rgba(39,247,255,0.7), 0 0 12px rgba(39,247,255,0.5);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -29,27 +30,48 @@
       background: var(--bg);
       color: var(--fg);
       font-family: ui-monospace, monospace;
+      overflow-x: hidden;
+    }
+
+    /* CRT EFFECT */
+    body::before {
+      content: "";
+      pointer-events: none;
+      position: fixed;
+      top:0; left:0; width:100%; height:100%;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.02) 0px,
+        rgba(255,255,255,0.02) 1px,
+        transparent 2px,
+        transparent 3px
+      );
+      opacity: .12;
+      mix-blend-mode: screen;
+      z-index: 9999;
     }
 
     header, footer {
       border: 1px solid var(--teal);
-      padding: 12px 18px;
+      padding: 10px 16px;
       margin: 12px auto;
-      max-width: 1100px;
+      max-width: 1200px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 14px;
-    }
-
-    .lumon {
-      font-weight: bold;
-      letter-spacing: 1px;
+      text-shadow: var(--glow);
       color: var(--teal);
     }
 
+    .lumon-logo {
+      font-weight: bold;
+      letter-spacing: 2px;
+      font-size: 16px;
+    }
+
     .container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
     }
@@ -68,52 +90,70 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.12s ease;
     }
 
     .number {
-      font-size: 18px;
+      font-size: 14px;
       color: var(--teal);
-      transition: transform 0.12s ease;
+      transition: transform 0.14s ease, opacity 0.2s ease;
+      text-shadow: var(--glow);
+      opacity: 0.9;
     }
 
-    /* Main hover */
+    /* MAIN HOVER */
     .cell:hover .number {
-      transform: scale(1.8);
+      transform: scale(2.2);
+      opacity: 1;
     }
 
-    /* Adjacent magnification */
+    /* ADJACENT MAGNIFICATION */
     .cell.adjacent .number {
-      transform: scale(1.3);
+      transform: scale(1.5);
+      opacity: 0.95;
     }
 
-    footer div {
-      text-align: center;
+    /* BAD NUMBER CLUSTER */
+    .bad-number {
+      position: absolute;
+      font-size: 22px;
+      color: var(--teal);
+      pointer-events: none;
+      animation: drift 6s infinite ease-in-out alternate;
+      text-shadow: var(--glow);
+    }
+
+    @keyframes drift {
+      0% { transform: translate(-10px, -10px) scale(1); }
+      100% { transform: translate(20px, 25px) scale(1.6); }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="lumon">Siena</div>
-    <div class="lumon">0% Complete</div>
+    <div class="lumon-logo">Cold Harbor</div>
+    <div class="lumon-logo">0% Complete</div>
   </header>
 
   <main class="container">
     <div id="grid" class="grid-wrap"></div>
+
+    <!-- BAD NUMBER CLUSTER -->
+    <div id="bad-cluster"></div>
   </main>
 
   <footer>
-    <div class="lumon">01</div>
-    <div class="lumon">02</div>
-    <div class="lumon">03</div>
-    <div class="lumon">04</div>
-    <div class="lumon">05</div>
+    <div class="lumon-logo">01</div>
+    <div class="lumon-logo">02</div>
+    <div class="lumon-logo">03</div>
+    <div class="lumon-logo">04</div>
+    <div class="lumon-logo">05</div>
   </footer>
 
   <script>
-    const COLS = 20;
-    const ROWS = 12;
+    const COLS = 32;
+    const ROWS = 18;
     const grid = document.getElementById('grid');
+    const badCluster = document.getElementById('bad-cluster');
 
     function genDigit() {
       return Math.floor(Math.random() * 10);
@@ -168,6 +208,24 @@
     });
 
     grid.addEventListener('mouseleave', clearAdjacency);
+
+    /* BAD NUMBER SWARM GENERATION */
+    function spawnBadCluster() {
+      badCluster.innerHTML = '';
+      const count = 12;
+      for (let i = 0; i < count; i++) {
+        const span = document.createElement('div');
+        span.className = 'bad-number';
+        span.textContent = genDigit();
+        span.style.left = (Math.random() * 60 + 20) + 'vw';
+        span.style.top = (Math.random() * 40 + 20) + 'vh';
+        span.style.animationDelay = (Math.random() * 3) + 's';
+        badCluster.appendChild(span);
+      }
+    }
+
+    spawnBadCluster();
+    setInterval(spawnBadCluster, 7000);
   </script>
 </body>
 </html>
