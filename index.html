@@ -130,7 +130,7 @@
 </head>
 <body>
   <header>
-    <div class="lumon-logo">Cold Harbor</div>
+    <div class="lumon-logo">Siena</div>
     <div class="lumon-logo">0% Complete</div>
   </header>
 
@@ -150,82 +150,64 @@
   </footer>
 
   <script>
-    const COLS = 32;
-    const ROWS = 18;
+    // Lumon-style toggle UI wiring
+    const lumonBadToggle = document.getElementById('lumonBadToggle');
+    const lumonTextToggle = document.getElementById('lumonTextToggle');
+    const overrideInput = document.getElementById('textOverride');
     const grid = document.getElementById('grid');
-    const badCluster = document.getElementById('bad-cluster');
 
-    function genDigit() {
-      return Math.floor(Math.random() * 10);
+    // Fade helper
+    function fadeSwap(fn){
+      grid.classList.add('fade');
+      setTimeout(()=>{
+        fn();
+        grid.classList.remove('fade');
+      },250);
     }
 
-    let cells = [];
-
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const index = r * COLS + c;
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.index = index;
-
-        const num = document.createElement('span');
-        num.className = 'number';
-        num.textContent = genDigit();
-
-        cell.appendChild(num);
-        grid.appendChild(cell);
-        cells.push(cell);
-      }
-    }
-
-    function clearAdjacency() {
-      cells.forEach(c => c.classList.remove('adjacent'));
-    }
-
-    function markAdjacent(centerIndex) {
-      const r = Math.floor(centerIndex / COLS);
-      const c = centerIndex % COLS;
-
-      const adjacentPositions = [
-        [r, c - 1], [r, c + 1],
-        [r - 1, c], [r + 1, c]
-      ];
-
-      adjacentPositions.forEach(([rr, cc]) => {
-        if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS) {
-          const idx = rr * COLS + cc;
-          cells[idx].classList.add('adjacent');
-        }
-      });
-    }
-
-    cells.forEach(cell => {
-      cell.addEventListener('mouseenter', () => {
-        const i = parseInt(cell.dataset.index);
-        clearAdjacency();
-        markAdjacent(i);
-      });
+    // BAD MODE
+    lumonBadToggle.addEventListener('click',()=>{
+      lumonBadToggle.classList.toggle('active');
+      document.body.classList.toggle('bad-active', lumonBadToggle.classList.contains('active'));
+      const params = new URLSearchParams(window.location.search);
+      params.set('bad', lumonBadToggle.classList.contains('active')?'1':'0');
+      history.replaceState(null,'',`?${params.toString()}`);
     });
 
-    grid.addEventListener('mouseleave', clearAdjacency);
+    // TEXT OVERRIDE
+    lumonTextToggle.addEventListener('click',()=>{
+      const active = lumonTextToggle.classList.toggle('active');
+      fadeSwap(()=>{
+        if(!active){
+          grid.classList.remove('override');
+          [...grid.children].forEach(c=> c.textContent = Math.floor(Math.random()*10));
+        } else {
+          const content = overrideInput.value.trim();
+          const chars = content? content.split('') : [' '];
+          grid.classList.add('override');
+          [...grid.children].forEach((c,i)=>{ c.textContent = chars[i % chars.length]; });
+        }
+      });
+      const params = new URLSearchParams(window.location.search);
+      params.set('text', active?'1':'0');
+      params.set('msg', overrideInput.value.trim());
+      history.replaceState(null,'',`?${params.toString()}`);
+    });
 
-    /* BAD NUMBER SWARM GENERATION */
-    function spawnBadCluster() {
-      badCluster.innerHTML = '';
-      const count = 12;
-      for (let i = 0; i < count; i++) {
-        const span = document.createElement('div');
-        span.className = 'bad-number';
-        span.textContent = genDigit();
-        span.style.left = (Math.random() * 60 + 20) + 'vw';
-        span.style.top = (Math.random() * 40 + 20) + 'vh';
-        span.style.animationDelay = (Math.random() * 3) + 's';
-        badCluster.appendChild(span);
-      }
+    // URL parameter loading
+    const initParams = new URLSearchParams(window.location.search);
+    if(initParams.get('bad')==='1'){
+      lumonBadToggle.classList.add('active');
+      document.body.classList.add('bad-active');
     }
-
-    spawnBadCluster();
-    setInterval(spawnBadCluster, 7000);
+    if(initParams.get('text')==='1'){
+      lumonTextToggle.classList.add('active');
+      const msg = initParams.get('msg')||'';
+      overrideInput.value = msg;
+      const chars = msg? msg.split('') : [' '];
+      grid.classList.add('override');
+      [...grid.children].forEach((c,i)=>{ c.textContent = chars[i % chars.length]; });
+    }
   </script>
 </body>
 </html>
