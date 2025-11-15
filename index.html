@@ -6,186 +6,168 @@
   <title>coldharbor.work — MDR Grid</title>
   <meta name="description" content="A Severance-inspired MDR grid for coldharbor.work" />
   <style>
-    /* --- Basic reset --- */
-    :root{
-      --teal: #00cfc2; /* bright teal tuned for the show */
+    :root {
+      --teal: #00e5db;
       --bg: #ffffff;
-      --muted: #0b0b0b;
-      --gap: 12px;
-      --grid-cols: 12;
+      --fg: #0b0b0b;
+      --gap: 10px;
+      --grid-cols: 20;
+      --cell-size: 32px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;color:var(--muted);background:var(--bg)}
 
-    /* --- Header (MDR-style) --- */
-    header{display:flex;align-items:center;gap:18px;padding:22px 28px;border-bottom:1px solid rgba(0,0,0,0.06)}
-    .mdr-badge{
-      display:inline-grid;place-items:center;padding:8px 12px;border-radius:6px;background:#f8fdfc;border:1px solid rgba(0,0,0,0.04);
-      box-shadow:0 6px 20px -12px rgba(0,0,0,0.25) inset;
-      font-weight:700;letter-spacing:2px;font-size:12px;color:var(--muted)
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --fg: #d6ffff;
+        --teal: #27f7ff;
+      }
     }
-    .site-title{font-size:14px;font-weight:700;letter-spacing:1.6px}
-    .site-sub{font-size:11px;opacity:0.75}
 
-    /* --- Layout --- */
-    .container{max-width:1150px;margin:36px auto;padding:0 20px}
-
-    /* --- Grid --- */
-    .grid-wrap{display:grid;grid-template-columns:repeat(var(--grid-cols),1fr);gap:var(--gap);align-items:start}
-    .cell{
-      min-height:72px;background:transparent;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%; margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-monospace, monospace;
     }
-    .number{
-      font-size:28px;font-weight:700;color:var(--teal);line-height:1;transition:transform .22s ease,opacity .18s ease;display:inline-block;padding:6px 8px;border-radius:4px
+
+    header, footer {
+      border: 1px solid var(--teal);
+      padding: 12px 18px;
+      margin: 12px auto;
+      max-width: 1100px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
     }
-    .cell:hover .number{transform:translateY(-6px) scale(1.06)}
-    .number:target, .cell.highlight .number{background:rgba(0,207,194,0.08);box-shadow:0 6px 22px -12px rgba(0,207,194,0.5) inset}
 
-    /* headlines aligned to grid -- each headline sits under matching cell column (uses grid-column to align) */
-    .headlines{margin-top:22px;display:grid;grid-template-columns:repeat(var(--grid-cols),1fr);gap:var(--gap)}
-    .headline{font-size:13px;padding:8px 10px;border-radius:6px;background:#fff;border:1px solid rgba(0,0,0,0.04);min-height:44px;display:flex;align-items:center}
+    .lumon {
+      font-weight: bold;
+      letter-spacing: 1px;
+      color: var(--teal);
+    }
 
-    /* small responsive touches */
-    @media (max-width:760px){:root{--grid-cols:6}.number{font-size:20px}}
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .grid-wrap {
+      display: grid;
+      grid-template-columns: repeat(var(--grid-cols), var(--cell-size));
+      gap: var(--gap);
+      place-content: center;
+    }
+
+    .cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+
+    .number {
+      font-size: 18px;
+      color: var(--teal);
+      transition: transform 0.12s ease;
+    }
+
+    /* Main hover */
+    .cell:hover .number {
+      transform: scale(1.8);
+    }
+
+    /* Adjacent magnification */
+    .cell.adjacent .number {
+      transform: scale(1.3);
+    }
+
+    footer div {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="mdr-badge">MDR</div>
-    <div>
-      <div class="site-title">COLDHARBOR.WORK</div>
-      <div class="site-sub">Minor Data Registry — Grid Display</div>
-    </div>
+    <div class="lumon">Siena</div>
+    <div class="lumon">0% Complete</div>
   </header>
 
   <main class="container">
-    <section>
-      <p style="margin:0 0 18px 0;opacity:.9">Click any tile to get a direct link (URL updates with an anchor). Use the headlines below to create short aligned notes.</p>
-
-      <div id="grid" class="grid-wrap" aria-label="MDR number grid"></div>
-
-      <div class="headlines" id="headlines"></div>
-    </section>
+    <div id="grid" class="grid-wrap"></div>
   </main>
 
+  <footer>
+    <div class="lumon">01</div>
+    <div class="lumon">02</div>
+    <div class="lumon">03</div>
+    <div class="lumon">04</div>
+    <div class="lumon">05</div>
+  </footer>
+
   <script>
-    // Parameters: change these to alter the grid
-    const COLS = 12; const ROWS = 6; // total 72 cells
+    const COLS = 20;
+    const ROWS = 12;
     const grid = document.getElementById('grid');
-    const headlines = document.getElementById('headlines');
 
-    // helper: generate pseudo-random 2- or 3-digit looking tokens similar to MDR
-    function genToken(){
-      const a = Math.floor(Math.random()*90)+10; // 2-digit
-      const b = Math.floor(Math.random()*90)+10;
-      return String(a);
+    function genDigit() {
+      return Math.floor(Math.random() * 10);
     }
 
-    // Create cells and headlines
-    const total = COLS*ROWS;
-    for(let i=0;i<total;i++){
-      const id = `n-${i+1}`;
+    let cells = [];
 
-      // cell
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.style.gridColumn = (i % COLS) + 1; // natural flow, kept for clarity
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const index = r * COLS + c;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = index;
 
-      const a = document.createElement('a');
-      a.href = `#${id}`;
-      a.setAttribute('aria-label', `Tile ${i+1}`);
-      a.className = 'number-link';
+        const num = document.createElement('span');
+        num.className = 'number';
+        num.textContent = genDigit();
 
-      const num = document.createElement('span');
-      num.className = 'number';
-      num.id = id;
-      num.textContent = genToken();
-      a.appendChild(num);
-      cell.appendChild(a);
-
-      // copy link to clipboard on click (optional UX)
-      cell.addEventListener('click', (ev)=>{
-        // avoid selecting when text selection occurs
-        ev.preventDefault();
-        history.replaceState(null,null,`#${id}`);
-        highlight(id);
-        const url = location.href;
-        // copy to clipboard silently if allowed
-        navigator.clipboard?.writeText(url).catch(()=>{});
-      });
-
-      grid.appendChild(cell);
-
-      // headline slot
-      const h = document.createElement('div');
-      h.className = 'headline';
-      h.dataset.target = id;
-      h.id = `hl-${id}`;
-      h.textContent = '';
-      headlines.appendChild(h);
-    }
-
-    // Allow external linking to highlight a cell (so you can link to floating numbers)
-    function highlight(id){
-      document.querySelectorAll('.cell').forEach(c=>c.classList.remove('highlight'));
-      const el = document.getElementById(id);
-      if(!el) return;
-      // find its parent .cell
-      const parent = el.closest('.cell');
-      if(parent){ parent.classList.add('highlight');
-        // ensure visible
-        parent.scrollIntoView({behavior:'smooth',block:'center'});
+        cell.appendChild(num);
+        grid.appendChild(cell);
+        cells.push(cell);
       }
     }
 
-    // If page loaded with a hash, highlight it
-    window.addEventListener('load', ()=>{
-      const h = location.hash.replace('#','');
-      if(h) highlight(h);
-    });
+    function clearAdjacency() {
+      cells.forEach(c => c.classList.remove('adjacent'));
+    }
 
-    // API: let users set short headlines programmatically via URL params (e.g. ?hl1=Hello&hl12=Note)
-    function applyHeadlinesFromQuery(){
-      const qp = new URLSearchParams(location.search);
-      qp.forEach((val,key)=>{
-        if(!key.startsWith('hl')) return;
-        const idx = parseInt(key.slice(2),10); // e.g. hl12 -> 12
-        if(isNaN(idx)) return;
-        const slot = document.getElementById(`hl-n-${idx}`);
-        if(slot) slot.textContent = decodeURIComponent(val);
-        else{
-          const alt = document.querySelector(`#hl-n-${idx}`);
-          if(alt) alt.textContent = val;
+    function markAdjacent(centerIndex) {
+      const r = Math.floor(centerIndex / COLS);
+      const c = centerIndex % COLS;
+
+      const adjacentPositions = [
+        [r, c - 1], [r, c + 1],
+        [r - 1, c], [r + 1, c]
+      ];
+
+      adjacentPositions.forEach(([rr, cc]) => {
+        if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS) {
+          const idx = rr * COLS + cc;
+          cells[idx].classList.add('adjacent');
         }
       });
     }
-    applyHeadlinesFromQuery();
 
-    // Small demo: prefill some headlines to show alignment
-    (function sampleHeadlines(){
-      const demo = {
-        2: 'Access Log',
-        5: 'Maintenance',
-        12: 'Secure',
-        18: 'Phase 3',
-        23: 'Station',
-        30: 'Archive'
-      };
-      for(const [k,v] of Object.entries(demo)){
-        const el = document.getElementById(`hl-n-${k}`) || document.getElementById(`hl-n-${k}`);
-        if(el) el.textContent = v;
-      }
-    })();
+    cells.forEach(cell => {
+      cell.addEventListener('mouseenter', () => {
+        const i = parseInt(cell.dataset.index);
+        clearAdjacency();
+        markAdjacent(i);
+      });
+    });
 
-    // Expose a tiny public API for dynamic use (so you can script headlines)
-    window.MDR = {
-      setHeadline(index, text){
-        const el = document.getElementById(`hl-n-${index}`);
-        if(el){el.textContent = text; return true}
-        return false
-      },
-      highlightIndex(i){highlight(`n-${i}`)}
-    };
+    grid.addEventListener('mouseleave', clearAdjacency);
   </script>
 </body>
 </html>
